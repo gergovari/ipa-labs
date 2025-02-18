@@ -85,7 +85,7 @@ int main(void)
 #define SURFACE_FOR_LITER 10
 #define PRICE_PER_LITER 550
 	double surface_sum = db * cylinder_surface(cylinder);
-	unsigned int liter_sum = (unsigned int)ceil(surface_sum / 10);
+	unsigned int liter_sum = (unsigned int)ceil(surface_sum / SURFACE_FOR_LITER);
 	unsigned int price = liter_sum * PRICE_PER_LITER;
 
 	printf("Surface sum: %.5lf [m^2]\nPaint needed: %u [l]\nPrice of paint: %u [HUF]\n", 
