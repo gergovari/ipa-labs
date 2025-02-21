@@ -26,25 +26,6 @@ struct Quadratic
 	double a, b, c;
 };
 
-static void scan_equation(struct Quadratic* equation)
-{
-	printf("ax^2 + bx + c = 0; x = ?\n");
-
-	printf("a = ");
-	scanf_s("%lf", &equation->a);
-
-	printf("b = ");
-	scanf_s("%lf", &equation->b);
-
-	printf("c = ");
-	scanf_s("%lf", &equation->c);
-}
-
-static void print_equation(struct Quadratic equation)
-{
-	printf("%.3lf * x^2 + %.3lf * x + %.3lf\n", equation.a, equation.b, equation.c);
-}
-
 struct ResultPart
 {
 	double real;
@@ -59,25 +40,26 @@ struct Result
 
 enum ResultType {SINGLE, REAL, COMPLEX};
 
-static void print_result(const struct Result result, const enum ResultType type)
+static void flush_buffer()
 {
-	switch (type) {
-	case SINGLE:
-		printf("x = %.3lf\n", 
-			result.first.real);
-		break;
-	case REAL:
-		printf("x_1 = %.3lf, x_2 = %.3lf\n", 
-			result.first.real, result.second.real);
-		break;
-	case COMPLEX:
-		printf("x_1 = (%.3lf) + (%.3lf)i, x_2 = (%.3lf) + (%.3lf)i\n", 
-			result.first.real, result.first.comp,
-			result.second.real, result.second.comp);
-		break;
-	}
+	while (getchar() != '\n') {}
 }
 
+static void scan_equation(struct Quadratic* equation)
+{
+	printf("ax^2 + bx + c = 0; x = ?\n");
+
+	printf("a = ");
+	scanf_s("%lf", &equation->a);
+
+	printf("b = ");
+	scanf_s("%lf", &equation->b);
+
+	printf("c = ");
+	scanf_s("%lf", &equation->c);
+
+	flush_buffer();
+}
 
 static int solve_equation(const struct Quadratic equation, struct Result* result)
 {
@@ -111,17 +93,147 @@ static int solve_equation(const struct Quadratic equation, struct Result* result
 	}
 }
 
+static void print_equation(struct Quadratic equation)
+{
+	printf("%.3lf * x^2 + %.3lf * x + %.3lf\n", equation.a, equation.b, equation.c);
+}
+
+static void print_result(const struct Result result, const enum ResultType type)
+{
+	switch (type) {
+	case SINGLE:
+		printf("x = %.3lf\n", 
+			result.first.real);
+		break;
+	case REAL:
+		printf("x_1 = %.3lf, x_2 = %.3lf\n", 
+			result.first.real, result.second.real);
+		break;
+	case COMPLEX:
+		printf("x_1 = (%.3lf) + (%.3lf)i, x_2 = (%.3lf) + (%.3lf)i\n", 
+			result.first.real, result.first.comp,
+			result.second.real, result.second.comp);
+		break;
+	}
+}
+
+/* Mertani is same as Geometric */
+enum AverageType {
+	Arithmetic = 65, Harmonic = 72, Geometric =	71, Cubic = 75,
+	Mertani = 77
+};
+
+static void handle_equation(struct Quadratic *equation)
+{
+	scan_equation(equation);
+	print_equation(*equation);
+
+	struct Result result;
+
+	int type = solve_equation(*equation, &result);
+	print_result(result, type);
+}
+
+static enum AverageType get_type()
+{
+	printf("Average types: (A)rithmetic, (G)eometric/(M)ertani, (K)Cubic\n");
+	printf("Your choice: ");
+	return getchar();
+}
+
+static void arithmetic_average(
+	double *nums, unsigned int len, double *result)
+{
+	for (unsigned int i = 0; i < len; i++)
+	{
+		*result += nums[i];
+	}
+	*result /= len;
+}
+
+static void harmonic_average(
+	double* nums, unsigned int len, double* result)
+{
+	for (unsigned int i = 0; i < len; i++)
+	{
+		*result += 1 / nums[i];
+	}
+	*result = len / *result;
+}
+
+static void geometric_average(
+	double* nums, unsigned int len, double* result)
+{
+	*result = nums[0];
+	for (unsigned int i = 1; i < len; i++)
+	{
+		*result *= nums[i];
+	}
+	*result = pow(*result, 1./len);
+}
+
+static void cubic_average(
+	double* nums, unsigned int len, double* result)
+{
+	for (unsigned int i = 0; i < len; i++)
+	{
+		*result += pow(nums[i], 3);
+	}
+	*result = pow(*result / len, 1./3);
+}
+
+static int average_nums(
+	double *nums, 
+	unsigned int len, 
+	enum AverageType type,
+	double *result)
+{
+	if (len == 0) { return -1; }
+
+	switch (type) {
+	case Arithmetic:
+		arithmetic_average(nums, len, result);
+		break;
+	case Harmonic:
+		harmonic_average(nums, len, result);
+		break;
+	case Geometric:
+	case Mertani:
+		geometric_average(nums, len, result);
+		break;
+	case Cubic:
+		cubic_average(nums, len, result);
+		break;
+	default:
+		return -1;
+	}
+	return 0;
+}
+
+static void handle_average(double *nums, unsigned int len)
+{
+	int error = -1;
+	double result = 0;
+
+	while (error != 0) {
+		enum AverageType type = get_type();
+		
+		error = average_nums(nums, len, type, &result);
+	}
+
+	printf("Average with your chosen method: %lf\n", result);
+}
+
 int main(void)
 {
 	struct Quadratic equation;
 
-	scan_equation(&equation);
-	print_equation(equation);
+	handle_equation(&equation);
+	
+#define LEN 3
+	double nums[LEN] = { equation.a, equation.b, equation.c };
 
-	struct Result result;
-
-	int type = solve_equation(equation, &result);
-	print_result(result, type);
+	handle_average(nums, LEN);
 
 	return 0;
 }
