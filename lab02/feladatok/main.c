@@ -18,7 +18,10 @@
 //	(i)  szabályos, egyenlő szárú, általános,													   logikai egyszerűsítések?!)
 //	(ii) derákszögű, tompaszögű, hegyesszügű
 
+#define _USE_MATH_DEFINES
+
 #include <stdio.h>
+#include <stdbool.h>
 #include <math.h>
 
 struct Quadratic
@@ -73,20 +76,20 @@ static int solve_equation(const struct Quadratic equation, struct Result* result
 
 		return 0;
 	} else if (d > 0) {
-		double a_twice = 2 * a;
-		double d_sqrt = sqrt(d);
+		double aTwice = 2 * a;
+		double dSqrt = sqrt(d);
 
-		result->first.real = (-b + d_sqrt) / a_twice;
-		result->second.real = (-b - d_sqrt) / a_twice;
+		result->first.real = (-b + dSqrt) / aTwice;
+		result->second.real = (-b - dSqrt) / aTwice;
 
 		return 1;
 	} else {
-		double a_twice = 2 * a;
+		double aTwice = 2 * a;
 
-		result->first.real = (-b) / a_twice;
+		result->first.real = (-b) / aTwice;
 		result->second.real = result->first.real;
 		
-		result->first.comp = sqrt(fabs(d)) / a_twice;
+		result->first.comp = sqrt(fabs(d)) / aTwice;
 		result->second.comp = -result->first.comp;
 
 		return 2;
@@ -117,10 +120,10 @@ static void print_result(const struct Result result, const enum ResultType type)
 	}
 }
 
-/* Mertani is same as Geometric */
+/* MERTANI is same as GEOMETRIC */
 enum AverageType {
-	Arithmetic = 65, Harmonic = 72, Geometric =	71, Cubic = 75,
-	Mertani = 77
+	ARITHMETIC = 65, HARMONIC = 72, GEOMETRIC =	71, CUBIC = 75,
+	MERTANI = 77
 };
 
 static void handle_equation(struct Quadratic *equation)
@@ -191,17 +194,17 @@ static int average_nums(
 	if (len == 0) { return -1; }
 
 	switch (type) {
-	case Arithmetic:
+	case ARITHMETIC:
 		arithmetic_average(nums, len, result);
 		break;
-	case Harmonic:
+	case HARMONIC:
 		harmonic_average(nums, len, result);
 		break;
-	case Geometric:
-	case Mertani:
+	case GEOMETRIC:
+	case MERTANI:
 		geometric_average(nums, len, result);
 		break;
-	case Cubic:
+	case CUBIC:
 		cubic_average(nums, len, result);
 		break;
 	default:
@@ -221,7 +224,245 @@ static void handle_average(double *nums, unsigned int len)
 		error = average_nums(nums, len, type, &result);
 	}
 
-	printf("Average with your chosen method: %lf\n", result);
+	printf("Average with your chosen method: %.3lf\n", result);
+}
+
+struct Triangle {
+	double a, b, c;
+};
+
+enum TriangleSidesType {EQUILATERAL, ISOSCELES, SCALENE};
+enum TriangleAnglesType {RIGHT, OBTUSE, ACUTE};
+
+static bool is_triangle_positive(const struct Triangle triangle)
+{
+	return triangle.a > 0 && triangle.b > 0 && triangle.c > 0;
+}
+
+static bool is_triangle_inequality(const struct Triangle triangle)
+{
+	double a = triangle.a;
+	double b = triangle.b;
+	double c = triangle.c;
+
+	return a + b > c && a + c > b && b + c > a;
+}
+
+static bool is_triangle_valid(const struct Triangle triangle)
+{
+	return is_triangle_positive(triangle) && is_triangle_inequality(triangle);
+}
+
+static double _calculate_rad_angle(double a, double b, double c)
+{
+    return acos((pow(b, 2) + pow(c, 2) - pow(a, 2)) / (2 * b * c));
+}
+
+static int triangle_angles(const struct Triangle triangle, double *angles)
+{
+	if (is_triangle_valid(triangle))
+	{
+		double a = triangle.a;
+		double b = triangle.b;
+		double c = triangle.c;
+		double radAngles[3] = {
+			_calculate_rad_angle(b, c, a),
+			_calculate_rad_angle(c, b, a),
+		};
+
+		radAngles[2] = M_PI - (radAngles[0] + radAngles[1]);
+
+		for (int i = 0; i < 3; i++)
+		{
+			angles[i] = radAngles[i] * (180 / M_PI);
+		}
+		return 0;
+	}
+	return -1;
+}
+
+static int triangle_perimeter(const struct Triangle triangle, double *perimeter)
+{
+	if (is_triangle_valid(triangle)) 
+	{
+		*perimeter = triangle.a + triangle.b + triangle.c;
+		return 0;
+	}
+	return -1;
+}
+
+static int triangle_area(const struct Triangle triangle, double *area)
+{
+	if (is_triangle_valid(triangle)) 
+	{
+		double perimeter = 0;
+		if (triangle_perimeter(triangle, &perimeter) == 0) {
+			double s = perimeter / 2;
+
+			*area = sqrt(s * (s - triangle.a) * (s - triangle.b) * (s - triangle.c));
+			return 0;
+		}
+	}
+	return -1;
+}
+
+#define EPSILON 1e-2
+
+static bool is_double_equal(double a, double b)
+{
+	/* Don't leave commented code as it's ugly, 
+	but if the epsilon value isn't good on your machine 
+	feel free to debug with this.*/
+	//printf("\n\n%.3lf == %.3lf => %lf (%d)\n\n", a, b, fabs(a - b), fabs(a - b) < EPSILON);
+	return fabs(a - b) < EPSILON;
+}
+
+static int triangle_sides_type(const struct Triangle triangle, enum TriangleSidesType* type)
+{
+	if (is_triangle_valid(triangle))
+	{
+		double a = triangle.a;
+		double b = triangle.b;
+		double c = triangle.c;
+		if (is_double_equal(a, b) && is_double_equal(b, c))
+		{
+			*type = EQUILATERAL;
+		} else if (is_double_equal(a, b) || is_double_equal(a, c) || is_double_equal(b, c)) {
+			*type = ISOSCELES;
+		} else {
+			*type = SCALENE;
+		}
+		return 0;
+	}
+	return -1;
+}
+
+static int triangle_angles_type(const struct Triangle triangle, enum TriangleAnglesType* type)
+{
+	if (is_triangle_valid(triangle))
+	{
+		double angles[3];
+		
+		int error = triangle_angles(triangle, angles);
+		if (error == 0)
+		{
+			for (int i = 0; i < 3; i++)
+			{
+				if (is_double_equal(angles[i], 90))
+				{
+					*type = RIGHT;
+					return 0;
+				}
+				
+				if (angles[i] > 90)
+				{
+					*type = OBTUSE;
+					return 0;
+				}
+			}
+			*type = ACUTE;
+		} else {
+			return -1;
+		}
+
+		return 0;
+	}
+	return -1;
+}
+
+static void print_triangle_sides_type(const enum TriangleSidesType type)
+{
+	switch (type) {
+	case EQUILATERAL:
+		printf("The triangle is equilateral.\n");
+		break;
+	case ISOSCELES:
+		printf("The triangle is isosceles.\n");
+		break;
+	case SCALENE:
+		printf("The triangle is scalene.\n");
+		break;
+	default:
+		printf("The triangle's side type couldn't be determined.\n");
+	}
+}
+
+static void print_triangle_angles_type(const enum TriangleAnglesType type)
+{
+	switch (type) {
+	case RIGHT:
+		printf("It's a right triangle.\n");
+		break;
+	case OBTUSE:
+		printf("It's an obtuse triangle.\n");
+		break;
+	case ACUTE:
+		printf("It's an acute triangle.\n");
+		break;
+	default:
+		printf("The triangle's side type couldn't be determined.\n");
+	}
+}
+
+static void handle_triangle(double *nums)
+{
+	struct Triangle triangle = {nums[0], nums[1], nums[2]};
+	
+	if (is_triangle_valid(triangle))
+	{
+		double perimeter;
+		double area;
+		double angles[3];
+		enum TriangleSidesType side; 
+		enum TriangleAnglesType angle; 
+
+		int error = triangle_perimeter(triangle, &perimeter);
+
+		if (error != 0)
+		{
+			printf("There was an unexpected error while calculating the triangle's perimeter!");
+			return;
+		}
+
+		error = triangle_area(triangle, &area);
+		if (error != 0)
+		{
+			printf("There was an unexpected error while calculating the triangle's area!");
+			return;
+		}
+
+		error = triangle_angles(triangle, &angles);
+		if (error != 0)
+		{
+			printf("There was an unexpected error while calculating the triangle's angles!");
+			return;
+		}
+
+		error = triangle_sides_type(triangle, &side);
+		if (error != 0)
+		{
+			printf("There was an unexpected error while deciding the side type of the triangle!");
+			return;
+		}
+
+		error = triangle_angles_type(triangle, &angle);
+		if (error != 0)
+		{
+			printf("There was an unexpected error while deciding the angle type of the triangle!");
+			return;
+		}
+
+		printf("Triangle's perimeter: %.3lf\n", perimeter);
+		printf("Triangle's area: %.3lf\n", area);
+		printf("Triangle's angles: %.3lfdeg, %.3lfdeg, (%.3lfdeg)\n", 
+			angles[0], angles[1], angles[2]);
+		
+		print_triangle_sides_type(side);
+		print_triangle_angles_type(angle);
+
+	} else {
+		printf("The resulting triangle is invalid.\n");
+	}
 }
 
 int main(void)
@@ -229,11 +470,15 @@ int main(void)
 	struct Quadratic equation;
 
 	handle_equation(&equation);
-	
-#define LEN 3
-	double nums[LEN] = { equation.a, equation.b, equation.c };
+	printf("\n");
 
-	handle_average(nums, LEN);
+	double nums[3] = { equation.a, equation.b, equation.c };
+
+	handle_average(nums, 3);
+	printf("\n");
+	
+	handle_triangle(nums);
+	printf("\n");
 
 	return 0;
 }
