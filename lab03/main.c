@@ -148,7 +148,7 @@ static void neptun_utility()
 	char id[NEPTUN_ID_LEN + 1];
 	unsigned int num = 20;
 	
-	printf("Generated neptun codes:\n");
+	printf("Generated Neptun codes:\n");
 	for (int i = 0; i < 20; i++)
 	{
 		printf("%u: ", i + 1);
@@ -164,11 +164,6 @@ struct ListNode
 	struct ListNode* next;
 };
 
-static void calc_polinomial(double x, double *y)
-{
-	*y = pow(x, 3) + pow(x, 2) + x + 0;
-}
-
 struct Polinomial
 {
 	double a, b, c, d;
@@ -178,6 +173,21 @@ struct PolinomialScan
 {
 	double low, high, step;
 };
+
+struct PolinomialIntegration
+{
+	double a, b;
+};
+
+static void calc_polinomial(const struct Polinomial polinomial, const double x, double *y)
+{
+	const double a = polinomial.a;
+	const double b = polinomial.b;
+	const double c = polinomial.c;
+	const double d = polinomial.d;
+
+	*y = a * pow(x, 3) + b * pow(x, 2) + c * x + d;
+}
 
 static void print_polinomial_scan(
 	const struct Polinomial polinomial, 
@@ -224,7 +234,7 @@ static int scan_polinomial(
 		{
 			node->next = NULL;
 			node->x = low + step * i;
-			calc_polinomial(node->x, &(node->y));
+			calc_polinomial(polinomial, node->x, &(node->y));
 			
 			if (i != range - 1) {
 				node->next = (struct ListNode*)malloc(sizeof(struct ListNode));
@@ -300,6 +310,29 @@ static void request_polinomial_scan(struct PolinomialScan *scan)
 
 }
 
+static void request_polinomial_integration(struct PolinomialIntegration *integration)
+{
+	printf("Specify the integration values:\n");
+
+	printf("a = ");
+	read_double_with_flush(&integration->a);
+
+	printf("b = ");
+	read_double_with_flush(&integration->b);
+}
+
+static void cleanup_list(struct ListNode* first)
+{
+	struct ListNode* node = first;
+	struct ListNode* next;
+
+	do {
+		next = node->next;
+		free(node);
+		node = next;
+	} while (node != NULL);
+}
+
 static void polinomial_utility()
 {
 	struct Polinomial polinomial;
@@ -315,11 +348,40 @@ static void polinomial_utility()
 	scan_polinomial(&first, polinomial, scan);
 	print_polinomial_scan(polinomial, scan);
 	print_polinomial_values(first);
+
+	cleanup_list(first);
+}
+
+static void calc_simpson(
+	const struct Polinomial polinomial, 
+	void (*func)(struct Polinomial, double, double*), 
+	const double a, const double b, double *area)
+{
+	double fa;
+	double fab;
+	double fb;
+
+	func(polinomial, a, &fa);
+	func(polinomial, (a+b)/2, &fab);
+	func(polinomial, b, &fb);
+
+	*area = ((b - a) / 6) * (fa + 4 * fab + fb);
 }
 
 static void integral_utility()
 {
+	struct Polinomial polinomial;
+	struct PolinomialIntegration integration;
+	double area = 0;
 
+	request_polinomial(&polinomial);
+	printf("\n");
+	
+	request_polinomial_integration(&integration);
+	printf("\n");
+
+	calc_simpson(polinomial, calc_polinomial, integration.a, integration.b, &area);
+	printf("The approximate integral of the polinomial: %lf (using Simpson's rule)\n", area);
 }
 
 struct MenuItem {
